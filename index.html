@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>E2-902 · Home</title>
+  <meta name="description" content="Every home starts as a plan. The floor plan of E2-902 at Palladio Kharadi Central II becomes the home, room by room, as you walk through it." />
+  <meta name="theme-color" content="#efebe2" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23efebe2'/%3E%3Cpath d='M7 7h18v18H7z' fill='none' stroke='%231d1d1f' stroke-width='2.4'/%3E%3Cpath d='M16 7v11h9' fill='none' stroke='%231d1d1f' stroke-width='2.4'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <canvas id="gl" aria-hidden="true"></canvas>
+
+  <div class="loader" id="loader">
+    <p class="loader__place">E2-902 · Level 9<br />Kharadi, Pune</p>
+    <div class="loader__story" aria-live="polite">
+      <p>Every home begins as a plan.</p>
+      <p>This one has three bedrooms, a sky deck and one redrawn kitchen.</p>
+      <p>This is the walk through it.</p>
+    </div>
+    <div class="loader__bar"><span>Drawing</span><i><b id="loadFill"></b></i><span id="loadPct">0%</span></div>
+    <p class="loader__note">Rendered live in your browser<span> · best on a laptop</span></p>
+  </div>
+
+  <header class="topbar">
+    <a class="mark" href="#" data-to="0">E2<span>·</span>902</a>
+    <nav class="topnav"><a class="pill" href="#" data-to="kitchen">The new kitchen</a><a class="pill" href="studio/">Set the mood</a><a class="pill pill--solid" href="walk/">Walk it yourself</a></nav>
+  </header>
+
+  <section class="hero" id="hero" aria-label="E2-902, customised floor plan">
+    <p class="hero__kicker">E2-902 <span>·</span> Palladio Kharadi Central II <span>·</span> 2026</p>
+    <h1 class="hero__title">
+      <span class="mask"><span>Every home</span></span>
+      <span class="mask"><span>starts as</span></span>
+      <span class="mask"><span>a <em>plan.</em></span></span>
+    </h1>
+    <p class="hero__lede">Three bedrooms on the ninth floor in Kharadi, with a sky deck and a kitchen drawn again to suit us. Scroll, and walk into the drawing.</p>
+    <div class="titleblock" aria-hidden="true">
+      <div><span>Project</span><b>E2-902</b></div>
+      <div><span>Drawing</span><b>Customised layout</b></div>
+      <div><span>Plan</span><b>3 BHK · E2-02</b></div>
+      <div><span>Sheet</span><b>No. 1 · Jan 2026</b></div>
+    </div>
+  </section>
+
+  <div class="labels" id="labels" aria-hidden="true"></div>
+  <div class="spots" id="spots"></div>
+  <p class="tip" id="tip" role="status"></p>
+
+  <nav class="ruler" id="ruler" aria-label="Rooms">
+    <div class="ruler__ticks" id="rulerTicks"></div>
+    <div class="ruler__now" id="rulerNow"><i></i></div>
+  </nav>
+  <p class="count" id="count"><b>00</b> / 08 rooms</p>
+
+  <div class="hint" id="hint">
+    <span class="hint__text">Scroll to walk in</span>
+    <i class="hint__line"><b id="hintFill"></b></i>
+  </div>
+
+  <aside class="card" id="card" aria-live="polite">
+    <p class="card__no"></p>
+    <h3 class="card__title"></h3>
+    <p class="card__time"></p>
+    <p class="card__text"></p>
+    <ul class="card__facts"></ul>
+    <div class="card__lay"></div>
+  </aside>
+
+  <main class="track" id="track"></main>
+
+  <section class="finale" id="finale">
+    <div class="finale__inner">
+      <p class="eyebrow" data-rise>Drawing no. 1 <span>·</span> customised layout</p>
+      <h2 class="finale__title">
+        <span class="mask"><span>Every home starts flat.</span></span>
+        <span class="mask"><span>Ours didn't <em>stay</em> that way.</span></span>
+      </h2>
+      <p class="finale__lede" data-rise>We started from the builder's E2-02 plan and changed what mattered most to us: the kitchen. The store became part of a U-shaped kitchen, the sink became a Futura multi-function sink, and the purifier moved under the counter. There's also a point for the robot that mops the floor.</p>
+      <ol class="notes" data-rise>
+        <li><b>01</b>Kitchen redesigned as per option 1.</li>
+        <li><b>02</b>Purifier inlet and electrical point moved for an under-counter purifier.</li>
+        <li><b>03</b>Futura multi-function sink instead of the standard sink.</li>
+        <li><b>04</b>PP3 power point moved to 600 mm from floor (switch on SB13).</li>
+        <li><b>05</b>Extra 16 A point for the mopping robot dock, 1 ft from floor.</li>
+      </ol>
+      <div class="finale__cta" data-rise>
+        <a class="pill pill--solid" href="walk/">Walk it yourself</a>
+        <a class="pill" href="studio/">Set the mood</a>
+        <a class="pill" href="#" data-to="0">Scroll it again</a>
+      </div>
+    </div>
+    <p class="ghost" aria-hidden="true">E2·902</p>
+    <div class="finale__meta">
+      <span>18.55° N · 73.94° E</span>
+      <span>Kharadi, Pune</span>
+      <span>Plan from the builder's E2-02 drawing</span>
+      <span>Materials: Poly Haven, CC0</span>
+    </div>
+    <p class="credit">After <a href="https://sam1983aing.github.io/casa-serra/" target="_blank" rel="noopener">Casa Serra</a> by Sam Aing · built with Claude</p>
+  </section>
+
+  <div class="nogl" id="nogl" hidden><p>This page builds the home in real time and needs WebGL 2.</p></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

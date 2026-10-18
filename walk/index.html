@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>E2-902 · Walk</title>
+  <meta name="description" content="Walk through E2-902 yourself, in first person, in the evening light. Every texture is drawn in code." />
+  <meta name="theme-color" content="#1b1a19" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+    } }
+  </script>
+  <style>
+    :root { --paper: #efebe2; --ink: #1d1d1f; --gold: #c9995a; --serif: 'Instrument Serif', Georgia, serif; --sans: 'Geist', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace; --g: clamp(16px, 2.6vw, 32px); }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1a19; color: var(--paper); font-family: var(--sans); -webkit-font-smoothing: antialiased; touch-action: none; user-select: none; }
+    #gl { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+
+    .intro { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: var(--g);
+      background: radial-gradient(ellipse at 50% 60%, rgba(27,26,25,0.35), rgba(27,26,25,0.82)); transition: opacity 0.6s, visibility 0.6s; }
+    .intro.gone { opacity: 0; visibility: hidden; }
+    .intro__box { max-width: 560px; text-align: center; }
+    .kicker { font: 500 11px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; margin: 0 0 18px; }
+    .kicker span { color: var(--gold); }
+    h1 { font: 400 clamp(46px, 7vw, 92px)/0.92 var(--serif); letter-spacing: -0.02em; margin: 0; }
+    h1 em { font-style: italic; color: var(--gold); }
+    .lede { font: 300 16px/1.55 var(--sans); opacity: 0.85; margin: 20px auto 26px; max-width: 42ch; }
+    .enter { padding: 14px 26px; border-radius: 99px; border: 1px solid var(--paper); background: var(--paper); color: var(--ink); font: 500 14px var(--sans); transition: background 0.3s, border-color 0.3s; }
+    .enter:hover { background: var(--gold); border-color: var(--gold); }
+    .keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; margin-top: 26px; font: 400 11px var(--mono); opacity: 0.75; }
+    .keys b { display: inline-block; min-width: 22px; padding: 3px 6px; margin-right: 6px; border: 1px solid rgba(239,235,226,0.45); border-radius: 4px; font-weight: 500; }
+    .touch-only { display: none; }
+    @media (pointer: coarse) { .mouse-only { display: none; } .touch-only { display: inline; } }
+    .back { position: fixed; top: var(--g); left: var(--g); z-index: 25; font: 400 24px/1 var(--serif); text-decoration: none; color: var(--paper); }
+    .back span { color: var(--gold); }
+    .back.mood { left: auto; right: var(--g); font: 500 12px var(--sans); padding: 8px 14px; border: 1px solid rgba(239,235,226,0.45); border-radius: 99px; }
+
+    .hud { position: fixed; z-index: 10; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
+    body.entered .hud { opacity: 1; }
+    .map { z-index: 21; }
+    body.entered .intro { pointer-events: none; }
+    body.entered .intro .enter { pointer-events: auto; }
+    .room { top: var(--g); left: 50%; transform: translateX(-50%); font: 400 30px/1 var(--serif); text-shadow: 0 1px 12px rgba(0,0,0,0.5); white-space: nowrap; }
+    .room.pop { animation: pop 0.7s ease; }
+    @keyframes pop { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    .cross { left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,255,255,0.75); box-shadow: 0 0 0 1px rgba(0,0,0,0.25); }
+    @media (pointer: coarse) { .cross { display: none; } }
+    .map { right: var(--g); bottom: var(--g); pointer-events: auto; border: 1px solid rgba(239,235,226,0.35); border-radius: 6px; overflow: hidden; background: rgba(27,26,25,0.35); backdrop-filter: blur(6px); }
+    .map canvas { display: block; width: 230px; height: auto; cursor: crosshair; }
+    .map.big { right: 50%; bottom: 50%; transform: translate(50%, 50%); }
+    .map.big canvas { width: min(80vw, 760px); }
+    .map p { margin: 0; padding: 6px 10px; font: 400 10px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.75; border-top: 1px solid rgba(239,235,226,0.2); }
+    .panel { left: var(--g); bottom: var(--g); pointer-events: auto; display: grid; gap: 10px; }
+    .rooms { display: grid; gap: 2px; }
+    .rooms button { text-align: left; background: none; border: 0; padding: 3px 0; font: 400 12px var(--sans); opacity: 0.8; text-shadow: 0 1px 8px rgba(0,0,0,0.6); }
+    .rooms button:hover { opacity: 1; color: var(--gold); }
+    .rooms i { font: 500 10px var(--mono); font-style: normal; display: inline-block; width: 20px; color: var(--gold); }
+    .toggles { display: flex; gap: 8px; }
+    .toggles button { padding: 7px 12px; border-radius: 99px; border: 1px solid rgba(239,235,226,0.45); background: rgba(27,26,25,0.35); backdrop-filter: blur(6px); font: 500 11px var(--sans); }
+    .toggles button:hover { border-color: var(--gold); }
+    .toggles b { font-weight: 500; color: var(--gold); }
+    .layout { padding: 12px 14px; border: 1px solid rgba(239,235,226,0.3); border-radius: 8px; background: rgba(27,26,25,0.45); backdrop-filter: blur(8px); max-width: 300px; transition: opacity 0.3s; }
+    .layout.off { opacity: 0; pointer-events: none; }
+    .layout p { margin: 0 0 8px; font: 500 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+    .layout p span { color: var(--gold); }
+    .layout small { opacity: 0.6; font-size: 10px; }
+    .laybtns { display: grid; gap: 4px; }
+    .laybtns button { display: flex; align-items: center; gap: 8px; text-align: left; padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(239,235,226,0.2); background: none; font: 400 12px var(--sans); }
+    .laybtns button:hover { border-color: var(--gold); }
+    .laybtns button.on { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+    .laybtns i { font: 500 10px var(--mono); font-style: normal; width: 16px; height: 16px; display: grid; place-items: center; border-radius: 50%; border: 1px solid currentColor; }
+    /* free cursor: a crosshair pointer instead of the centre dot */
+    body.playing:not(.locked) #gl { cursor: crosshair; }
+    body:not(.locked) .cross { display: none; }
+    body.playing.arranging #gl { cursor: default; }   /* Arrange: a normal pointer (the page sets grab / grabbing over furniture) */
+    body.arranging .edge { display: none; }
+    .edge { position: fixed; top: 0; bottom: 0; width: 12vw; z-index: 9; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+    .edge.l { left: 0; background: linear-gradient(90deg, rgba(201,153,90,0.22), transparent); }
+    .edge.r { right: 0; background: linear-gradient(-90deg, rgba(201,153,90,0.22), transparent); }
+    .tl-card.walk { right: var(--g); top: calc(var(--g) + 40px); opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+    body.entered .tl-card.walk { opacity: 1; pointer-events: auto; }
+    @media (max-width: 700px) { .tl-card.walk { top: 96px; } }
+    .sunpop { display: none; width: 250px; padding: 12px; border-radius: 10px; border: 1px solid rgba(239,235,226,0.3); background: rgba(27,26,25,0.75); backdrop-filter: blur(10px); }
+    .sunpop.on { display: grid; gap: 8px; }
+    .sunpop__h { margin: 0; font: 500 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+    .sunpop input[type=date] { padding: 6px 8px; border-radius: 7px; border: 1px solid rgba(239,235,226,0.25); background: rgba(0,0,0,0.3); color: var(--paper); font: 500 12px var(--sans); color-scheme: dark; }
+    .sunpop input[type=range] { width: 100%; accent-color: var(--gold); }
+    .sunchips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .sunchips button { padding: 3px 8px; border-radius: 99px; border: 1px solid rgba(239,235,226,0.3); font: 500 10.5px var(--sans); }
+    .sunchips button:hover { border-color: var(--gold); }
+    .sunpop__i { margin: 0; font: 400 11px/1.5 var(--sans); color: rgba(239,235,226,0.7); }
+    .sunpop__i b { color: var(--paper); font-weight: 500; }
+    .xrpop { display: none; width: 280px; padding: 12px; border-radius: 10px; border: 1px solid rgba(239,235,226,0.3); background: rgba(27,26,25,0.8); backdrop-filter: blur(10px); }
+    .xrpop.on { display: grid; gap: 6px; }
+    .xrpop > button { text-align: left; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(239,235,226,0.25); }
+    .xrpop > button:not(:disabled):hover { border-color: var(--gold); }
+    .xrpop > button:disabled { opacity: 0.4; cursor: default; }
+    .xrpop b { display: block; font: 500 13px var(--sans); }
+    .xrpop small { display: block; font: 400 10.5px/1.4 var(--sans); opacity: 0.7; margin-top: 2px; }
+    #xrOverlay { display: none; position: fixed; inset: 0; pointer-events: none; font-family: var(--sans); color: #fff; }
+    #xrOverlay[data-mode^="ar"] { display: block; }
+    #xrOverlay button { pointer-events: auto; padding: 10px 14px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.6); background: rgba(0,0,0,0.45); font: 500 14px var(--sans); }
+    .xr-top { position: absolute; top: 14px; left: 14px; right: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; text-shadow: 0 1px 6px #000; }
+    .xr-pad { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 56px); gap: 8px; }
+    .xr-pad.xr-doll { grid-template-columns: auto; }
+    .xr-pad button { padding: 12px 0 !important; }
+    #xrOverlay .xr-doll, #xrOverlay .xr-true { display: none; }
+    #xrOverlay[data-mode="ar-doll"] .xr-doll, #xrOverlay[data-mode="ar-true"] .xr-true { display: revert; }
+    #xrOverlay[data-mode="ar-true"] .xr-pad.xr-true, #xrOverlay[data-mode="ar-doll"] .xr-pad.xr-doll { display: grid; }
+    body.in-xr .hud, body.in-xr .tl-card, body.in-xr .back, body.in-xr .intro { display: none !important; }
+    .stick { position: fixed; z-index: 11; width: 100px; height: 100px; margin: -50px 0 0 -50px; border-radius: 50%; border: 1px solid rgba(239,235,226,0.5); background: rgba(27,26,25,0.25); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .stick i { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(239,235,226,0.8); }
+    @media (max-width: 700px) {
+      .layout { max-width: 210px; padding: 9px 10px; }
+      .laybtns button { padding: 5px 8px; font-size: 11px; }
+      .map canvas { width: 150px; }
+      .map p { display: none; }
+      .rooms { display: none; }
+      .room { font-size: 24px; top: calc(var(--g) + 34px); }
+    }
+    .loading { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: #1b1a19; font: 400 28px var(--serif); transition: opacity 0.8s, visibility 0.8s; }
+    body.ready .loading { opacity: 0; visibility: hidden; }
+  </style>
+</head>
+<body>
+  <canvas id="gl"></canvas>
+  <div class="loading">Building the flat…</div>
+  <a class="back" href="../">E2<span>·</span>902</a>
+  <a class="back mood" href="../studio/">Set the mood →</a>
+
+  <div class="intro" id="intro">
+    <div class="intro__box">
+      <p class="kicker">E2-902 <span>·</span> Level 9 <span>·</span> Evening</p>
+      <h1>Come in,<br />take a <em>walk.</em></h1>
+      <p class="lede">The same flat as the plan, drawn in three.js and lit for the evening. Walk anywhere you like. Every texture is drawn in code, with no image files.</p>
+      <button class="enter" id="enter">Step inside</button>
+      <div class="keys">
+        <span class="mouse-only"><b>W A S D</b>walk</span>
+        <span class="mouse-only"><b>Mouse</b>look around (pointer stays free to click)</span>
+        <span class="mouse-only"><b>Screen edge</b>keep turning</span>
+        <span class="mouse-only"><b>Shift</b>hurry</span>
+        <span class="mouse-only"><b>1–8</b>jump to a room</span>
+        <span class="mouse-only"><b>L</b>lights</span>
+        <span class="mouse-only"><b>T</b>golden hour / midday</span>
+        <span class="mouse-only"><b>M</b>big map</span>
+        <span class="mouse-only"><b>F</b>switch furniture layout</span>
+        <span class="mouse-only"><b>G</b>arrange furniture: click a piece and drag it, R turns, right-drag looks around</span>
+        <span class="mouse-only"><b>E</b>electrical points</span>
+        <span class="mouse-only"><b>Q</b>tape measure</span>
+        <span class="mouse-only"><b>C</b>lock the mouse (classic)</span>
+        <span class="mouse-only"><b>Esc</b>pause</span>
+        <span><b>VR / AR</b>button: Quest headset or Android phone</span>
+        <span class="touch-only">Left thumb walks · right thumb looks · tap the map to jump</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="hud room" id="room">Entrance lobby</p>
+  <div class="hud cross"></div>
+  <div class="edge l" id="edgeL"></div><div class="edge r" id="edgeR"></div>
+  <div class="hud panel">
+    <div class="layout off" id="layout"><p><span id="layName"></span> layout <small class="mouse-only">· F to switch</small></p><div class="laybtns" id="layBtns"></div></div>
+    <div class="rooms" id="rooms"></div>
+    <div class="xrpop" id="xrPop">
+      <p class="sunpop__h">VR / AR</p>
+      <button id="xrVR" disabled><b>Enter VR</b><small>Quest: left stick walks, right stick turns, trigger at the floor teleports, A/X switches layout, B/Y lights</small></button>
+      <button id="xrDoll" disabled><b>AR · dollhouse</b><small>Tap a table to put the flat there at 1:40</small></button>
+      <button id="xrTrue" disabled><b>AR · true scale</b><small>Stand at the real front door, facing in, then start. Furniture and the kitchen appear at full size; nudge to line it up.</small></button>
+      <p class="sunpop__i" id="xrStatus">Checking for VR and AR…</p>
+    </div>
+    <div class="sunpop" id="sunPop">
+      <p class="sunpop__h">Real sun · Kharadi</p>
+      <input type="date" id="sunDate" aria-label="Date">
+      <div class="sunchips" id="sunChips"><button data-m="3" data-d="21">21 Mar</button><button data-m="6" data-d="21">21 Jun</button><button data-m="9" data-d="23">23 Sep</button><button data-m="12" data-d="21">21 Dec</button><button data-today="1">Today</button></div>
+      <input type="range" id="sunTime" min="5" max="23.5" step="0.05" aria-label="Time of day">
+      <p class="sunpop__i" id="sunInfoW"></p>
+    </div>
+    <div class="toggles">
+      <button id="btnMood" title="Real sun: date and time">☀ <b id="moodName">17:30</b></button>
+      <button id="btnLights">Lights <b id="lightsName">on</b></button>
+      <button id="btnLock" class="mouse-only">Mouse <b id="lockName">free</b></button>
+      <button id="btnXR" title="VR headset or phone AR">VR / AR</button>
+    </div>
+  </div>
+  <div class="hud map" id="map"><canvas id="mapc"></canvas><p>Click the map to jump there</p></div>
+  <div class="stick" id="stick"><i id="knob"></i></div>
+  <!-- Shown over the camera view during AR (WebXR dom-overlay). -->
+  <div id="xrOverlay">
+    <div class="xr-top"><span class="xr-doll">Point at a table, then tap to place the flat</span><span class="xr-true">Line the furniture up with the real room</span><button id="xrExit">Exit AR</button></div>
+    <div class="xr-pad xr-true"><button data-n="l">⟲</button><button data-n="f">▲</button><button data-n="r">⟳</button><button data-n="sl">◀</button><button data-n="b">▼</button><button data-n="sr">▶</button><button data-n="down">↓ floor</button><button data-n="up">↑ floor</button></div>
+    <div class="xr-pad xr-doll"><button id="xrPlace">Place here</button></div>
+  </div>
+
+  <script type="module" src="walk.js"></script>
+</body>
+</html>

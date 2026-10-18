@@ -1,0 +1,4 @@
+# Original builder / designer drawings stay private (not published)
+plans/
+# Local tools: preview servers, self-signed certificate and key
+.claude/

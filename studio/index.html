@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>E2-902 · Set the Mood</title>
+  <meta name="description" content="A moodboard that builds the room. Drag wood, stone, fabric and paint onto any surface of E2-902, move the furniture, and pull the sun across the sky." />
+  <meta name="theme-color" content="#0d0d0f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+    } }
+  </script>
+  <style>
+    :root { --ink: #0d0d0f; --paper: #f1ece3; --mute: rgba(241,236,227,0.62); --line: rgba(241,236,227,0.14); --glass: rgba(24,23,22,0.72); --gold: #c9995a; --serif: 'Instrument Serif', Georgia, serif; --sans: 'Geist', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--paper); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+    #gl { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+    button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
+    .glass { background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--line); border-radius: 12px; }
+    .ui { transition: opacity 0.4s; }
+    body.clean .ui, body.clean #tags, body.clean #leaders, body.clean #tip { opacity: 0; pointer-events: none; }
+    .lbl { font: 500 9.5px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
+
+    /* left: title, presets, meter, moodboard */
+    .left { position: fixed; left: 16px; top: 16px; width: 316px; max-height: calc(100vh - 32px); overflow-y: auto; scrollbar-width: none; display: grid; gap: 10px; }
+    .title { padding: 4px 4px 0; }
+    .title h1 { margin: 0; font: 600 13px/1 var(--sans); letter-spacing: 0.04em; text-transform: uppercase; }
+    .title h1 span { display: block; font: 400 52px/0.9 var(--serif); letter-spacing: -0.01em; text-transform: none; color: var(--paper); }
+    .title h1 span em { color: var(--gold); }
+    .title p { margin: 8px 0 0; font: 300 12.5px/1.45 var(--sans); color: var(--mute); }
+    .presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .preset { text-align: left; padding: 7px; border-radius: 9px; border: 1px solid var(--line); background: rgba(24,23,22,0.6); transition: border-color 0.2s, background 0.2s; }
+    .preset:hover { border-color: rgba(241,236,227,0.4); }
+    .preset.on { background: var(--paper); color: var(--ink); }
+    .preset .strip { display: flex; height: 8px; border-radius: 3px; overflow: hidden; margin-bottom: 7px; }
+    .preset .strip i { flex: 1; background-size: cover; }
+    .preset b { display: block; font: 600 13px var(--sans); }
+    .preset small { font: 400 10px var(--mono); opacity: 0.6; }
+    .meter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px; }
+    .meter div b { display: block; font: 500 15px var(--sans); margin-top: 2px; }
+    .meter div i { display: block; height: 2px; margin-top: 6px; background: var(--gold); border-radius: 2px; transition: width 0.4s; }
+    .reading { margin: 0; padding: 0 4px; font: 300 12.5px/1.5 var(--sans); color: var(--mute); }
+    .reading b { color: var(--paper); font-weight: 500; }
+    .reading em { font-style: normal; color: var(--gold); }
+    .boardbox { padding: 10px; }
+    .boardbox header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .cell { text-align: center; border-radius: 8px; padding: 4px 2px 6px; border: 1px solid transparent; }
+    .cell:hover { border-color: var(--line); }
+    .cell.on { border-color: var(--gold); background: rgba(201,153,90,0.08); }
+    .cell i { display: block; width: 100%; aspect-ratio: 1.2; border-radius: 6px; background-size: cover; margin-bottom: 5px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+    .cell small { display: block; font: 500 8.5px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); }
+    .cell b { display: block; font: 500 11px var(--sans); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* right: toolbar + daylight */
+    .tools { position: fixed; right: 16px; top: 16px; display: flex; gap: 6px; }
+    .tools button { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; }
+    .tools button:hover:not(:disabled) { border-color: var(--gold); }
+    .tools button:disabled { opacity: 0.35; cursor: default; }
+    .tools svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    body.recording #bRec { color: #ff6b5b; }
+    .daylight { position: fixed; right: 16px; top: 60px; width: 252px; padding: 12px; }
+    .daylight header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .daylight header b { font: 500 15px var(--mono); }
+    .days { display: grid; gap: 6px; }
+    .day { display: flex; align-items: center; gap: 10px; padding: 5px; border-radius: 9px; border: 1px solid transparent; text-align: left; }
+    .day:hover { border-color: var(--line); }
+    .day.on { border-color: var(--gold); background: rgba(201,153,90,0.08); }
+    .day canvas { width: 132px; height: 74px; border-radius: 6px; background: #1a1918; }
+    .day b { display: block; font: 500 13px var(--sans); }
+    .day small { font: 400 10.5px var(--mono); color: var(--mute); }
+    input[type=range] { width: 100%; margin: 12px 0 2px; accent-color: var(--gold); }
+    .seg { display: flex; gap: 4px; margin-top: 10px; }
+    .seg span { flex: 1; align-self: center; }
+    .seg button { padding: 5px 9px; border-radius: 99px; border: 1px solid var(--line); font: 500 11px var(--sans); }
+    .seg button.on { background: var(--paper); color: var(--ink); }
+
+    /* bottom: palette */
+    .palette { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); max-width: min(760px, calc(100vw - 32px)); padding: 10px 12px 12px; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+    .tabs button { padding: 5px 12px; border-radius: 99px; font: 500 12px var(--sans); color: var(--mute); }
+    .tabs button.on { background: var(--paper); color: var(--ink); }
+    .tabs .hint { margin-left: auto; align-self: center; }
+    .swatches { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
+    .sw { flex: 0 0 66px; text-align: center; transition: opacity 0.2s, transform 0.2s; }
+    .sw i { display: block; width: 66px; height: 54px; border-radius: 8px; background-size: cover; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); transition: box-shadow 0.2s; }
+    .sw:hover i { box-shadow: inset 0 0 0 2px var(--gold); }
+    .sw.on i { box-shadow: inset 0 0 0 2px var(--paper); }
+    .sw.dim { opacity: 0.38; }
+    .sw small { display: block; font: 400 10px/1.25 var(--sans); margin-top: 4px; color: var(--mute); }
+    .sw[draggable=true] { cursor: grab; }
+    .frow { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; flex-wrap: wrap; width: 100%; }
+    .swatches:has(.frow) { flex-direction: column; gap: 6px; max-height: 38vh; overflow-y: auto; }
+    .frow span { width: 118px; font: 500 11px var(--sans); }
+    .frow button { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px 4px 5px; border-radius: 99px; border: 1px solid var(--line); font: 400 11px var(--sans); }
+    .frow button.on { background: var(--paper); color: var(--ink); }
+    .frow i { font: 500 9px var(--mono); font-style: normal; width: 15px; height: 15px; display: grid; place-items: center; border-radius: 50%; border: 1px solid currentColor; }
+    .reset { align-self: flex-start; margin-top: 4px; padding: 5px 12px; border-radius: 99px; border: 1px solid var(--line); font: 500 11px var(--sans); color: var(--mute); }
+
+    /* tags, leaders, tooltip, toast, help */
+    #leaders { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; transition: opacity 0.4s; }
+    #leaders line { stroke: rgba(241,236,227,0.55); stroke-width: 1; stroke-dasharray: 2 3; }
+    #leaders circle { fill: var(--paper); }
+    #tags { position: fixed; left: 0; top: 0; transition: opacity 0.4s; }
+    .tag { position: absolute; left: 0; top: 0; display: grid; justify-items: center; gap: 2px; padding: 5px 7px 6px; border-radius: 9px; background: rgba(20,19,18,0.78); border: 1px solid var(--line); backdrop-filter: blur(8px); white-space: nowrap; }
+    .tag.on { border-color: var(--gold); }
+    .tag i { width: 52px; height: 40px; border-radius: 6px; background-size: cover; }
+    .tag b { font: 500 11px var(--sans); }
+    .tag small { font: 500 8px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
+    #tip { position: fixed; left: 0; top: 0; padding: 7px 10px; border-radius: 8px; background: var(--paper); color: var(--ink); font: 400 12px var(--sans); pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 30; max-width: 280px; }
+    #tip.on { opacity: 1; }
+    #tip small { display: block; font: 400 10.5px var(--sans); opacity: 0.65; margin-top: 2px; }
+    #toast { position: fixed; left: 50%; bottom: 150px; transform: translate(-50%, 10px); padding: 9px 14px; border-radius: 99px; background: var(--paper); color: var(--ink); font: 500 12px var(--sans); opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; z-index: 40; }
+    #toast.on { opacity: 1; transform: translate(-50%, 0); }
+    #help { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(13,13,15,0.7); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    #help.on { opacity: 1; pointer-events: auto; }
+    #help div { max-width: 460px; padding: 24px 26px; }
+    #help h2 { margin: 0 0 12px; font: 400 34px var(--serif); }
+    #help li { font: 300 13.5px/1.6 var(--sans); color: var(--mute); }
+    #help li b { color: var(--paper); font-weight: 500; }
+    .tl-card.studio { right: 16px; bottom: 16px; max-height: 42vh; }
+    body.clean .tl-card { opacity: 0; pointer-events: none; }
+    @media (max-width: 1100px) { .tl-card.studio { bottom: auto; top: 60px; right: 240px; } }
+    @media (max-width: 760px) { .tl-card.studio { top: 150px; right: 12px; } }
+    /* real sun */
+    .daylight { max-height: calc(100vh - 80px); overflow-y: auto; scrollbar-width: none; }
+    .dates { display: grid; gap: 6px; margin-bottom: 8px; }
+    .dates input { width: 100%; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--line); background: rgba(0,0,0,0.25); color: var(--paper); font: 500 12px var(--sans); color-scheme: dark; }
+    .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chips button { padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); font: 500 10.5px var(--sans); color: var(--mute); }
+    .chips button.on, .chips button:hover { color: var(--paper); border-color: var(--gold); }
+    .suninfo { margin: 0 0 10px; font: 400 11px/1.5 var(--sans); color: var(--mute); }
+    .suninfo b { color: var(--paper); font-weight: 500; }
+    .shade { display: flex; align-items: center; gap: 7px; margin-top: 8px; font: 400 11px var(--sans); color: var(--mute); cursor: pointer; }
+    .shade input { accent-color: var(--gold); }
+    .hours { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+    .hours summary { cursor: pointer; font: 500 11px var(--sans); }
+    .hours .lbl { margin: 8px 0 6px; }
+    .sh { display: grid; grid-template-columns: 1fr 56px 34px; gap: 6px; align-items: center; margin: 3px 0; font: 400 11px var(--sans); }
+    .sh i { height: 5px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .sh i b { display: block; height: 100%; background: linear-gradient(90deg, #ff9a4a, #ffd27a); }
+    .sh em { font-style: normal; font: 500 10.5px var(--mono); text-align: right; }
+    .sh small { grid-column: 1 / -1; margin-top: -3px; font: 400 9.5px var(--mono); color: var(--mute); }
+    .hours .note { margin: 8px 0 0; font: 400 10px/1.4 var(--sans); color: var(--mute); }
+    #hourLabels { position: fixed; inset: 0; pointer-events: none; z-index: 3; }
+    #hourLabels span { position: absolute; left: 0; top: 0; font: 500 10px var(--mono); color: #ffc56b; text-shadow: 0 1px 4px #000; }
+    body.clean #hourLabels { display: none; }
+    /* compare */
+    .cmp-badge, .cmp-bar, .cmp-split { display: none; }
+    body.comparing .cmp-badge { display: flex; position: fixed; top: 60px; z-index: 6; max-width: 36vw; gap: 10px; align-items: flex-start; padding: 9px 11px; cursor: pointer; }
+    body.comparing .cmp-badge[data-w="A"] { left: 344px; }
+    body.comparing .cmp-badge[data-w="B"] { left: calc(50% + 12px); }
+    .cmp-badge.on { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+    .cmp-text b { font: 400 30px/0.9 var(--serif); color: var(--gold); margin-right: 8px; float: left; }
+    .cmp-text span { display: block; font: 500 12px var(--sans); }
+    .cmp-text small { display: block; font: 400 10.5px var(--sans); color: var(--mute); margin-top: 2px; }
+    .cmp-badge button { flex: none; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--line); font: 500 10.5px var(--sans); color: var(--mute); }
+    .cmp-badge button:hover { color: var(--paper); border-color: var(--gold); }
+    body.comparing .cmp-bar { display: flex; gap: 6px; position: fixed; left: 50%; top: 16px; transform: translateX(-50%); padding: 5px; z-index: 6; }
+    .cmp-bar button { padding: 6px 12px; border-radius: 99px; font: 500 11.5px var(--sans); }
+    .cmp-bar button:hover { background: rgba(255,255,255,0.08); }
+    body.comparing .cmp-split { display: block; position: fixed; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(201,153,90,0.6); z-index: 2; pointer-events: none; }
+    body.comparing #tags, body.comparing #leaders, body.comparing .tl-card { display: none; }
+    body.comparing #bCompare { border-color: var(--gold); color: var(--gold); }
+    @media (max-width: 1100px) { body.comparing .cmp-badge[data-w="A"] { left: 12px; top: auto; bottom: 150px; } body.comparing .cmp-badge[data-w="B"] { top: auto; bottom: 150px; } }
+    .orig { cursor: pointer; } .orig:hover { color: var(--gold); }
+    .back { font: 400 22px/1 var(--serif); text-decoration: none; color: var(--paper); align-self: center; margin-right: 4px; }
+    .back span { color: var(--gold); }
+    body.dragging #gl { outline: 2px dashed rgba(201,153,90,0.6); outline-offset: -8px; }
+    .loading { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: var(--ink); font: 400 28px var(--serif); transition: opacity 0.8s, visibility 0.8s; }
+    body.ready .loading { opacity: 0; visibility: hidden; }
+
+    @media (max-width: 1100px) { .daylight .day canvas { width: 96px; height: 54px; } .daylight { width: 210px; } .left { width: 280px; } }
+    @media (max-width: 760px) {
+      .left { left: 12px; right: 12px; width: auto; top: auto; bottom: 146px; max-height: none; gap: 6px; overflow: visible; }
+      .title, .reading, .meter, .boardbox header { display: none; }
+      .left > * { min-width: 0; }   /* let the moodboard strip scroll instead of widening the panel */
+      .presets .preset small { display: none; }
+      .preset { padding: 5px 7px; }
+      .boardbox { padding: 6px; }
+      .board { display: flex; overflow-x: auto; gap: 6px; scrollbar-width: none; }
+      .cell { flex: 0 0 58px; padding: 2px; }
+      .cell b { display: none; }
+      .daylight { left: 12px; right: 12px; width: auto; top: 56px; padding: 8px 10px; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; }
+      .daylight header { margin: 0; gap: 8px; }
+      .daylight header .lbl { display: none; }
+      .days { display: none; }
+      .daylight input[type=range] { margin: 0; }
+      .seg { grid-column: 1 / -1; margin-top: 6px; }
+      .tools { left: 12px; right: 12px; justify-content: flex-end; }
+      .tools .back { margin-right: auto; }
+      .tools button { width: 30px; height: 30px; }
+      .palette { left: 12px; right: 12px; transform: none; max-width: none; bottom: 12px; padding: 8px 10px 10px; }
+      .tabs .hint { display: none; }
+      .tabs button { padding: 5px 9px; font-size: 11.5px; }
+      .sw { flex-basis: 56px; } .sw i { width: 56px; height: 44px; }
+      #tags, #leaders { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gl"></canvas>
+  <div class="loading">Laying out the moodboard…</div>
+  <svg id="leaders"></svg>
+  <div id="tags"></div>
+
+  <aside class="left ui">
+    <div class="title">
+      <h1>Set the <span><em>Mood</em></span></h1>
+      <p>A moodboard that builds the room. Drag wood, stone, fabric and paint onto any surface, move the furniture, and pull the sun across the sky.</p>
+    </div>
+    <div class="presets" id="presets"></div>
+    <div class="meter glass">
+      <div id="m-cozy"><span class="lbl">Cozy</span><b>–</b><i></i></div>
+      <div id="m-bright"><span class="lbl">Bright</span><b>–</b><i></i></div>
+      <div id="m-moody"><span class="lbl">Moody</span><b>–</b><i></i></div>
+    </div>
+    <p class="reading" id="reading"></p>
+    <div class="boardbox glass">
+      <header><span class="lbl">Moodboard</span><button class="lbl orig" id="bOriginal" title="Back to the original materials on every page">Original look ↺</button></header>
+      <div class="board" id="board"></div>
+    </div>
+  </aside>
+
+  <div class="tools ui">
+    <a class="back" href="../">E2<span>·</span>902</a>
+    <button class="glass" id="bUndo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
+    <button class="glass" id="bRedo" title="Redo (Ctrl+Y)"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/></svg></button>
+    <button class="glass" id="bShot" title="Save an image"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></button>
+    <button class="glass" id="bLink" title="Copy a share link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg></button>
+    <button class="glass" id="bEye" title="Hide the panels"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <button class="glass" id="bCompare" title="Compare two versions side by side"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg></button>
+    <button class="glass" id="bRec" title="Record an 8-second orbit"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg></button>
+    <button class="glass" id="bHelp" title="How it works"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5v.01"/></svg></button>
+  </div>
+  <div class="daylight glass ui">
+    <header><span class="lbl">Real sun · Kharadi</span><b id="clock">18:30</b></header>
+    <div class="dates"><input type="date" id="dateIn" aria-label="Date"><div class="chips" id="dateChips"></div></div>
+    <p class="suninfo" id="sunInfo"></p>
+    <div class="days" id="days"></div>
+    <input type="range" id="timeSlider" min="5" max="23.5" step="0.05" value="18.5" aria-label="Time of day" />
+    <label class="shade"><input type="checkbox" id="shadeOn" checked> Roof and full walls cast shadows</label>
+    <div class="seg" id="wallSeg"><span class="lbl">Walls</span><button data-h="2.86">Full</button><button data-h="2.1">Cut</button><button data-h="1.2">Low</button></div>
+    <details class="hours"><summary>Direct sun by room</summary><div id="sunHours"></div></details>
+  </div>
+
+  <!-- compare: one badge per half -->
+  <div class="cmp-badge glass" data-w="A"><div class="cmp-text"></div><button id="cmpBtoA" title="Make A the same as B">← Copy B</button></div>
+  <div class="cmp-badge glass" data-w="B"><div class="cmp-text"></div><button id="cmpAtoB" title="Make B the same as A">Copy A →</button></div>
+  <div class="cmp-bar glass"><button id="cmpSeason" title="Same look: 21 June on the left, 21 December on the right">June vs December</button><button id="cmpExit">Exit compare</button></div>
+  <div class="cmp-split"></div>
+  <div id="hourLabels"></div>
+
+  <div class="palette glass ui">
+    <div class="tabs" id="tabs">
+      <button data-tab="wood">Wood</button><button data-tab="stone">Stone</button><button data-tab="fabric">Fabric</button><button data-tab="paint">Paint</button><button data-tab="furniture">Furniture</button>
+      <span class="lbl hint">drag onto the room, or click</span>
+    </div>
+    <div class="swatches" id="swatches"></div>
+  </div>
+
+  <div id="tip"></div>
+  <div id="toast" role="status"></div>
+  <div id="help"><div class="glass">
+    <h2>Set the mood</h2>
+    <ul>
+      <li><b>Restyle a surface:</b> click it in the room (or in the moodboard), then pick a swatch. Or drag a swatch straight onto a floor, wall, sofa, bed or rug.</li>
+      <li><b>Move furniture:</b> drag a piece across the floor, or click it and use <b>Arrange</b> (tools card): arrows nudge 5 cm (Shift 1 cm), R turns 90°, 15° turns, "Against wall", remove or reset a piece. The panel shows the gap to each wall.</li>
+      <li><b>Custom layouts:</b> in Arrange, name the room's arrangement and save it. It appears next to A/B/C here, in the walk and on the scroll page.</li>
+      <li><b>Real sun:</b> pick a date and drag the slider or the sun along its dotted path; the sun is where it really is over Kharadi on that day, and sunlight only lands where the walls, windows and slab above let it in. "Direct sun by room" estimates hours of sun on each floor.</li>
+      <li><b>Compare:</b> the split-screen button shows two versions side by side, A and B, each with its own materials, layouts, date and time. Click a side to edit it. "June vs December" sets up a seasonal study.</li>
+      <li><b>Layouts:</b> the Furniture tab switches each room between its three layouts.</li>
+      <li><b>Look around:</b> drag empty space to orbit, scroll to zoom, right-drag to pan.</li>
+      <li><b>Tools</b> (bottom right): <b>Electrical</b> shows every switchboard, socket and light from the electrical layout and flags any hidden by furniture (E). <b>Tape</b> measures between two clicks (Q). <b>Fit check</b> drops in furniture by size and shows its clearances.</li>
+      <li><b>One design everywhere:</b> your materials, layouts, moved furniture and fit-check pieces are saved in this browser and show up in the walk and the scroll page too (even in a tab that is already open). "Original look" in the moodboard puts the materials and furniture back.</li>
+      <li><b>Keep it:</b> save an image, record an orbit, or copy a link that opens this exact look. <b>Ctrl+Z</b> undoes.</li>
+    </ul>
+  </div></div>
+
+  <script type="module" src="studio.js"></script>
+</body>
+</html>
